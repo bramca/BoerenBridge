@@ -1,0 +1,9 @@
+# Chinees Poepen
+Het famous kaart spelleke.
+
+# Requirements
+Python 3.x
+pip modules:
+colorama
+numpy
+websockets
