@@ -34,6 +34,8 @@ async def notify_users(message):
 
 
 async def register(websocket):
+    print("user connected")
+    print(websocket)
     USERS.add(websocket)
     global game_started
     if game_started == 1:
@@ -66,10 +68,17 @@ async def game(websocket, path):
                 global dealer
                 global n_cards
                 global index
+                global current_player
+                global cards_up
+                global n_tricks
+                global total_tricks
+                global trump
+                global trump_card
                 game_started = 1
                 await notify_users(json.dumps({"type": "start", "value": "started", "dealer": dealer}))
                 while len(players) < 4:
-                    players.append(Player(1, len(players)));
+                    players.append(Player(1, len(players)))
+                    players[-1].is_ai = True
                 np.random.shuffle(deck)
                 await notify_users(json.dumps({"type": "deck", "value": deck}))
                 print(deck)
@@ -82,6 +91,28 @@ async def game(websocket, path):
                     print(player)
                     player.print_cards()
                 await notify_users(json.dumps({"type": "deal", "dealer": dealer ,"n_cards": n_cards}))
+                player_deciding = (dealer + 1) % n_players
+                total_tricks = 0
+                trump = deck[index][-1]
+                trump_card = deck[index]
+                print("trumpcard: {}".format(trump_card))
+                for j in range(n_players):
+                    if not players[player_deciding].is_ai:
+                        await notify_users(json.dumps({"type": "decide_tricks", "player_deciding": player_deciding, "n_tricks": n_tricks, "total_tricks": total_tricks}))
+                    else:
+                        print("player is ai")
+                        if n_cards != 1:
+                            n_tricks = players[player_deciding].decide_tricks(trump, total_tricks, (player_deciding == dealer))
+                        else:
+                            cards_up = 1
+                            other_players_cards = list()
+                            for k in range(n_players):
+                                if k != player_deciding:
+                                    other_players_cards.append(players[k].cards[0])
+                            n_tricks = players[player_deciding].decide_tricks_one_card(trump, total_tricks, other_players_cards, (player_deciding == dealer))
+                    players[player_deciding].update_tricks(n_tricks)
+                    total_tricks += n_tricks
+                    player_deciding = (player_deciding + 1) % n_players
             else:
                 logging.error("unsupported event: {}", data)
     finally:
@@ -112,7 +143,7 @@ class Player:
 
     def __str__(self):
         return "player {}".format(self.id)
-    
+
     def draw(self, deck, index, n_cards):
         self.cards.extend([deck[i] for i in range(index, index + n_cards)])
         self.cards.sort(key=cmp_cards)
@@ -156,7 +187,7 @@ class Player:
                         sys.exit(0)
                     except:
                         continue
-                    
+
                 while card_index > len(self.cards) - 1 or card_index < 0:
                     print("please enter a valid card index")
                     while True:
@@ -168,7 +199,7 @@ class Player:
                         except:
                             continue
 
-            
+
         return self.cards.pop(card_index)
 
     def update_wins(self):
@@ -219,7 +250,7 @@ class Player:
                 max_odds_other_players = odds
         if (1 - self.risk_taking) > max_odds_other_players:
             n_tricks += 1
-            
+
         if is_dealer and total_tricks + n_tricks == len(self.cards):
             if n_tricks > 0:
                 n_tricks -= 1
@@ -244,13 +275,13 @@ class Player:
 
         if len(playable_cards) == 0:
             playable_cards = [i for i in range(len(self.cards))]
-        
+
         table_max_odds = 0
         for i in range(len(cards_on_table)):
             odds = (card_points[cards_on_table[i][:-1]] + len(cards) * (cards_on_table[i][-1] == trump)) / (2 * len(cards))
             if odds > table_max_odds:
                 table_max_odds = odds
-            
+
         playable_max_odds = 0
         playable_min_odds = 1
         playable_max_odds_card = playable_cards[0]
@@ -263,7 +294,7 @@ class Player:
             if odds < playable_min_odds:
                 playable_min_odds = odds
                 playable_min_odds_card = i
-        
+
         if self.tricks < self.wins and playable_max_odds > table_max_odds:
             card_to_play = playable_max_odds_card
         elif self.tricks < self.wins and playable_max_odds < table_max_odds:
@@ -290,17 +321,17 @@ class Player:
         # print(card_to_play)
         time.sleep(random.randint(1, 3))
         return self.cards.pop(card_to_play)
-        
 
-    
+
+
 def check_player_has_suit(cards_on_table, player_cards):
     for c in player_cards:
         if c[-1] == cards_on_table[0][-1]:
             return True
-    
+
     return False
-                    
-    
+
+
 def calculate_winner(cards, cards_on_table, card_points, starting_player, n_players, trump):
     winner = 0
     winner_points = 0
@@ -315,9 +346,9 @@ def calculate_winner(cards, cards_on_table, card_points, starting_player, n_play
 
 
 def main():
-    
 
-    start_server = websockets.serve(game, "localhost", 6789)
+
+    start_server = websockets.serve(game, port=6789)
 
     asyncio.get_event_loop().run_until_complete(start_server)
     asyncio.get_event_loop().run_forever()
@@ -336,7 +367,7 @@ def main():
     #         sys.exit(0)
     #     except:
     #         continue
-    
+
     # while n_players > max_players or n_players < min_players:
     #     while True:
     #         try:
@@ -346,7 +377,7 @@ def main():
     #             sys.exit(0)
     #         except:
     #             continue
-                
+
     # index = 0
     # n_cards = 7
     # n_rounds = 13
@@ -365,14 +396,14 @@ def main():
     #         player = players[(dealer + p + 1) % n_players]
     #         player.start_new_round()
     #         index = player.draw(deck, index, n_cards)
-            
+
     #     trump = deck[index][-1]
     #     trump_card = deck[index]
     #     print("trump card: {}".format(trump_card))
     #     index += 1
     #     starting_player = (dealer + 1) % n_players
     #     player_deciding = starting_player
-        
+
     #     # the playing of the round
     #     print("each player decides his tricks, player {} starts".format(starting_player))
     #     total_tricks = 0
@@ -410,7 +441,7 @@ def main():
     #                     sys.exit(0)
     #                 except:
     #                     continue
-                    
+
     #             if player_deciding != dealer:
     #                 while n_tricks > n_cards or n_tricks < 0:
     #                     print("please enter a valid number of tricks")
@@ -422,7 +453,7 @@ def main():
     #                             sys.exit(0)
     #                         except:
     #                             continue
-                    
+
     #             else:
     #                 while n_tricks > n_cards or n_tricks < 0 or (total_tricks + n_tricks) == n_cards:
     #                     print("please enter a valid number of tricks")
@@ -470,10 +501,10 @@ def main():
     #     for l in range(n_players):
     #         players[l].calculate_score()
     #         print("player {} (tricks: {}, wins: {}, score: {})".format(l, players[l].tricks, players[l].wins, players[l].score))
-        
+
     #     n_cards += cards_up
     #     dealer = (dealer + 1) % n_players
     #     time.sleep(2)
-        
+
 if __name__ == "__main__":
     main()

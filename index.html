@@ -38,9 +38,10 @@
             <span class="users">?</span> online
         </div>
         <script>
-            var users = document.querySelector('.users'),
-                enter_game = document.querySelector('.enter'),
-                websocket = new WebSocket("ws://127.0.0.1:6789/");
+          var users = document.querySelector('.users');
+          var enter_game = document.querySelector('.enter');
+          var websocket_addr = window.location.host.replace(/:.*/, '');
+          var websocket = new WebSocket("ws://" + websocket_addr + ":6789/");
           if (sessionStorage.getItem('player_id') || sessionStorage.getItem('game_started')) {
               $('.enter').hide();
           }
