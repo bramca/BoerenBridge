@@ -1,6 +1,42 @@
 html { 
 	background-color:#092E20; 
 }
+body {
+    font-family: "Courier New", sans-serif;
+    text-align: center;
+}
+.buttons {
+    font-size: 4em;
+    display: flex;
+    justify-content: center;
+}
+.button, .value {
+    line-height: 1;
+    padding: 2rem;
+    margin: 2rem;
+    border: medium solid;
+    min-height: 1em;
+    min-width: 1em;
+}
+.button {
+    cursor: pointer;
+    user-select: none;
+}
+.minus {
+    color: red;
+}
+.plus {
+    color: green;
+}
+.value {
+    min-width: 2em;
+}
+.state {
+    font-size: 2em;
+}
+.enter {
+    color: green;
+}
 
 body { 
 	position:relative;
@@ -39,6 +75,7 @@ h1 {
 }
 
 #card-table {
+  position: relative;
 	background-color:green;
 	height:400px;
 	width:600px;
@@ -70,4 +107,30 @@ footer a, footer a:visited{
 
 footer a:hover {
 	color:black;
+}
+#decide-tricks-form {
+    display: none;
+    position: absolute;
+    left: 10%;
+    top: 75%;
+}
+#player_S {
+    position:absolute;
+    left: 50%;
+    top: 85%;
+}
+#player_E {
+    position:absolute;
+    left: 0%;
+    top: 50%;
+}
+#player_N {
+    position:absolute;
+    left: 50%;
+    top: 15%;
+}
+#player_W {
+    position:absolute;
+    left: 85%;
+    top: 50%;
 }

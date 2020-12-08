@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width" />
+
+    <link rel="stylesheet" href="game.css"/>
+
+    <style>
+      body { font-family: Tahoma, Geneva, sans-serif; }
+    </style>
+
+    <!-- colyseus.js client -->
+
+    <style type="text/css">
+      .player {
+        width: 100px;
+        height: 100px;
+        position: absolute;
+        padding-top: 24px;
+        box-sizing: border-box;
+        left: 0;
+        top: 0;
+      }
+    </style>
+
+  </head>
+  <body>
+    <h3>Chinees poepen</h3>
+    <div class="buttons">
+      <div id="start_button" class="start button">start game</div>
+    </div>
+    <div class="state">
+      <span class="players">?</span> online
+    </div>
+    <div id="card-table">
+      <div id="player_S"></div>
+      <div id="player_E"></div>
+      <div id="player_N"></div>
+      <div id="player_W"></div>
+      <form action="" id="decide-tricks-form">
+        <label>enter number of tricks:</label>
+        <input id="decide-form-input" type="text"/>
+        <input type="submit"/>
+      </form>   <!-- <button id="deal">DEAL</button> -->
+    </div>
+    <div>
+      <span class="total-tricks">?</span> total tricks
+    </div>
+    <script type="text/javascript" src="https://unpkg.com/colyseus.js@^0.14.0/dist/colyseus.js"></script>
+    <script type="text/javascript" src="deckType.js"></script>
+    <script type="text/javascript" src="cards.js"></script>
+    <script type="text/javascript" src="game.js"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  </body>
+</html>

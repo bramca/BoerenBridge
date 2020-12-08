@@ -8,8 +8,7 @@ import { monitor } from '@colyseus/monitor';
 
 // Import demo room handlers
 import { ChatRoom } from "./rooms/01-chat-room";
-import { SinglePlayerRoom } from "./rooms/singe-player-room";
-import { TwoPlayerRoom } from "./rooms/two-player-room";
+import { MultiPlayerRoom } from "./rooms/multi-player-room";
 
 const port = Number(process.env.PORT || 2567) + Number(process.env.NODE_APP_INSTANCE || 0);
 const app = express();
@@ -42,10 +41,7 @@ gameServer.define("chat_with_options", ChatRoom, {
 });
 
 // Define "state_handler" room
-gameServer.define("single_player", SinglePlayerRoom)
-    .enableRealtimeListing();
-
-gameServer.define("two_player", TwoPlayerRoom)
+gameServer.define("multi_player", MultiPlayerRoom)
     .enableRealtimeListing();
 
 app.use('/', serveIndex(path.join(__dirname, "static"), {'icons': true}))

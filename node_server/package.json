@@ -1,7 +1,7 @@
 {
-  "name": "colyseus-examples",
+  "name": "chinees-poepen",
   "version": "1.0.0",
-  "description": "Usage Examples of Colyseus Game Server",
+  "description": "Kaart spelleke",
   "main": "index.js",
   "scripts": {
     "start": "ts-node index.ts",
