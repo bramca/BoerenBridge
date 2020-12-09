@@ -47,5 +47,11 @@ client.joinOrCreate("multi_player").then(room_instance => {
         var name = prompt("What is your name?");
         room.send("name", { name: name });
     });
+    room.onMessage("draw_cards", (message) => {
+        console.log(message);
+        for (let card of message) {
+            console.log(card);
+        }
+    });
 
 });

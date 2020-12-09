@@ -9,11 +9,11 @@ export class Player extends Schema {
     score = 0;
     is_ai = false;
     risk_taking = 0;
-    player_id = "";
+    id = "";
 
-    constructor(is_ai: boolean, player_id: string) {
+    constructor(is_ai: boolean, id: string) {
         super();
-        this.player_id = player_id;
+        this.id = id;
         this.is_ai = is_ai;
     }
 
@@ -30,7 +30,7 @@ export class Player extends Schema {
     }
 
     toString() {
-        let result = "__ player " + this.player_id + " (tricks: " + this.tricks + ", wins: " + this.wins + ", score: " + this.score + ")__\n";
+        let result = "__ player " + this.name + " (tricks: " + this.tricks + ", wins: " + this.wins + ", score: " + this.score + ")__\n";
         result += "[";
         for (let i = 0; i < this.cards.length - 1; i++) {
             result += i + ": " + this.cards[i] + ", ";
@@ -43,6 +43,7 @@ export class Player extends Schema {
 export class State extends Schema {
     @type({ map: Player })
     players = new MapSchema<Player>();
+    clients = new MapSchema<Client>();
     players_arr = [];
     cards = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "D", "K", "1"];
     suits = ["h", "d", "s", "c"];
@@ -71,9 +72,6 @@ export class State extends Schema {
                 player.start_new_round();
                 index = player.draw(this.deck, index, 1);
             }
-        }
-        for (let player of this.players) {
-            console.log(player.toString());
         }
     }
 
@@ -110,7 +108,6 @@ export class State extends Schema {
 
 export class MultiPlayerRoom extends Room<State> {
     maxClients = 4;
-
     onCreate (options) {
         console.log("MultiPlayerRoom created!", options);
 
@@ -126,10 +123,20 @@ export class MultiPlayerRoom extends Room<State> {
             this.maxClients = this.state.players.size;
             while (this.state.players.size < 4) {
                 this.state.createPlayer(true, "bot" + (this.state.players.size + 1).toString());
+                this.state.players["bot" + this.state.players.size].name += this.state.players.size + 1;
             }
             console.log("max spelers")
             console.log(this.maxClients);
             this.state.start_round();
+            // round started
+            console.log("round started");
+            for (let player of this.state.players) {
+                console.log(player[1].toString());
+                if (!player[1].is_ai) {
+                    console.log("sending draw cards message to " + player[1].toString() + "with id: " + player[1].id);
+                    this.state.clients[player[1].id].send("draw_cards", player[1].cards);
+                }
+            }
         });
     }
 
@@ -139,6 +146,7 @@ export class MultiPlayerRoom extends Room<State> {
 
     onJoin (client: Client) {
         client.send("ask_name", {});
+        this.state.clients[client.sessionId] = client;
         this.state.createPlayer(false, client.sessionId);
     }
 
