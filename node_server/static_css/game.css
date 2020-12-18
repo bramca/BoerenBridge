@@ -121,16 +121,21 @@ footer a:hover {
 }
 #player_E {
     position:absolute;
-    left: 0%;
+    left: 85%;
     top: 50%;
 }
 #player_N {
     position:absolute;
     left: 50%;
-    top: 15%;
+    top: 25%;
 }
 #player_W {
     position:absolute;
-    left: 85%;
+    left: 0%;
     top: 50%;
+}
+#total-tricks-count {
+    position: absolute;
+    left: 80%;
+    top: 95%;
 }
