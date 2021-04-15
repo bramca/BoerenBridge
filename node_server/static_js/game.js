@@ -10,6 +10,11 @@ var player_dirs_index = 0;
 var client_player_id = 0;
 var table_name = "#card-table";
 var number_of_cards = 0;
+var max_number_players = 4;
+var total_tricks = 0;
+var trump_hand = {};
+var my_turn = false;
+var cards_on_table = {};
 function render_cards(player_id) {
     let place = players[player_id].place;
     console.log("drawing cards for: " + player_id + ", place: " + place);
@@ -80,15 +85,21 @@ client.joinOrCreate("multi_player").then(room_instance => {
         } else {
             players[sessionId].place = player_dirs[player_dirs_index];
             players[sessionId].name = sessionId;
+            players[sessionId].old_name = sessionId;
             player_dirs_index++;
+            // replace players text with dynamic function
             $("#" + players[sessionId].place).text(sessionId);
             let player_id = sessionId;
             render_cards(player_id);
+        }
+        if (Object.keys(players).length == max_number_players) {
+            room.send("start_decide_tricks", {});
         }
     }
 
     room.state.players.onRemove = function (player, sessionId) {
         console.log("player removed: " + sessionId);
+        // replace players text with dynamic function
         $("#" + players[sessionId].place).text("");
         delete players[sessionId];
         player_dirs_index--;
@@ -101,6 +112,8 @@ client.joinOrCreate("multi_player").then(room_instance => {
         players[data_id].place = player_dirs[player_dirs_index];
         player_dirs_index++;
         players[data_id].name = data_name;
+        players[data_id].old_name = data_name;
+        // replace players text with dynamic function
         $("#" + players[data_id].place).text(data_name);
     });
 
@@ -116,16 +129,48 @@ client.joinOrCreate("multi_player").then(room_instance => {
             players[player_key].name = player_names[player_key];
             players[player_key].place = player_dirs[player_dirs.length - (curr_players_length - dirs_index_temp)];
             dirs_index_temp++;
+            // replace players text with dynamic function
             $("#" + players[player_key].place).text(players[player_key].name);
         }
         name = prompt("What is your name?");
         players[client_id].name = name;
+        players[client_id].old_name = name;
+        // replace players text with dynamic function
         $("#" + players[client_id].place).text(name);
         room.send("name", { name: name });
+    });
+    room.onMessage("broadcast_winner", (message) => {
+        let id = message.id;
+        let wins = message.wins;
+        players[id].wins = message.wins;
+        alert(players[id].name + " wins the round!");
+        players[id].name = players[id].name + " (wins: " + players[id].wins + ")";
+        // replace players text with dynamic function
+        $("#" + players[id].place).text(players[id].name);
+        for (let player_id of Object.keys(players)) {
+            if (player_id != id) {
+                // replace players text with dynamic function
+                $("#" + players[player_id].place).text(players[player_id].name);
+            }
+        }
+        let cards_to_remove = [];
+        for (let c of cards_on_table) {
+            c.el.remove();
+            cards_to_remove.push(c);
+        }
+        for (let c of cards_to_remove) {
+            cards_on_table.removeCard(c);
+        }
+        $(".total-tricks").text(0);
+        room.send("start_next_round", {});
     });
     room.onMessage("deck_shuffled", (message) => {
         console.log("message");
         console.log(message);
+        $(".card").remove();
+        deck = new cards.Deck();
+        deck.y = 200;
+        deck.x = 250;
         $(".buttons").hide();
         game_started = true;
         var deck_cards = [];
@@ -163,4 +208,147 @@ client.joinOrCreate("multi_player").then(room_instance => {
         }
     });
 
+    room.onMessage("broadcast_card_played", (message) => {
+        let id = message.id;
+        let card = message.card;
+        let card_number = card.substring(0, card.length - 1);
+        let card_type = card[card.length - 1];
+        if (card_number == "K") {
+            card_number = 13;
+        } else if (card_number == "D") {
+            card_number = 12;
+        } else if (card_number == "J") {
+            card_number = 11;
+        }
+        console.log("received broadcast_card_played from " + id + " with card " + card);
+        players[id].hand.topCard().el.remove();
+        players[id].hand.removeCard(players[id].hand.topCard());
+        let card_obj = new cards.Card(card_type, card_number, table_name);
+        players[id].hand.addCard(card_obj);
+        players[id].hand.render({immediate: true});
+        cards_on_table.addCard(players[id].hand.topCard());
+        // players[id].hand.topCard().el.remove();
+        // players[id].hand.removeCard(players[id].hand.topCard());
+        cards_on_table.render({});
+        players[id].hand.render({});
+    });
+
+    room.onMessage("play_card", (message) => {
+        console.log("received play_card " + message.id);
+        my_turn = true;
+        $(".card").click(function(ev) {
+            let card = $(this).data('card');
+            if (card.container == players[message.id].hand && my_turn) {
+                console.log("card clicked");
+                console.log(card);
+                console.log("first card on table");
+                console.log(cards_on_table[0]);
+                console.log("trump card");
+                console.log(trumphand.topCard());
+                if (cards_on_table.length == 0) {
+                    cards_on_table.addCard(card);
+                    cards_on_table.render({});
+                    my_turn = false;
+                    let card_number = card.rank;
+                    if (card_number == 13) {
+                        card_number = "K";
+                    } else if (card_number == 12) {
+                        card_number = "D";
+                    } else if (card_number == 11) {
+                        card_number = "J";
+                    }
+                    room.send("card_played", { 'card': (card_number + card.suit) });
+                } else if (card.suit == cards_on_table[0].suit || card.suit == trumphand.topCard().suit) {
+                    cards_on_table.addCard(card);
+                    cards_on_table.render({});
+                    my_turn = false;
+                    let card_number = card.rank;
+                    if (card_number == 13) {
+                        card_number = "K";
+                    } else if (card_number == 12) {
+                        card_number = "D";
+                    } else if (card_number == 11) {
+                        card_number = "J";
+                    }
+                    room.send("card_played", { 'card': (card_number + card.suit) });
+                } else {
+                    let has_suit = false;
+                    for (let c of players[message.id].hand) {
+                        if (c.suit == cards_on_table[0].suit) {
+                            has_suit = true;
+                        }
+                    }
+                    if (!has_suit) {
+                        cards_on_table.addCard(card);
+                        cards_on_table.render({});
+                        my_turn = false;
+                        let card_number = card.rank;
+                        if (card_number == 13) {
+                            card_number = "K";
+                        } else if (card_number == 12) {
+                            card_number = "D";
+                        } else if (card_number == 11) {
+                            card_number = "J";
+                        }
+                        room.send("card_played", { 'card': (card_number + card.suit) });
+                    }
+                }
+            }
+        });
+    });
+
+    room.onMessage("trump_card", (message) => {
+        console.log("received trump_card: " + message);
+        let card_number = message.substring(0, message.length - 1);
+        let card_type = message[message.length - 1];
+        if (card_number == "K") {
+            card_number = 13;
+        } else if (card_number == "D") {
+            card_number = 12;
+        } else if (card_number == "J") {
+            card_number = 11;
+        }
+        trumphand = new cards.Hand({faceUp: true, y: deck.y, x: deck.x});
+        trumphand.addCard(new cards.Card(card_type, card_number, table_name));
+        trumphand.render({immediate: true});
+        cards_on_table = new cards.Hand({faceUp: true, y: deck.y, x: deck.x + 100});
+    });
+
+    room.onMessage("dealer", (message) => {
+        console.log("received message dealer: " + message);
+        players[message].name = players[message].name + " (D)";
+        // replace players text with dynamic function
+        $("#" + players[message].place).text(players[message].name);
+    });
+
+    room.onMessage("decide_tricks", (message) => {
+        let client_id = message.id;
+        trumphand.render({immediate: true});
+        console.log("received decide_tricks: " + message.id + ", total_tricks: " + message.total_tricks);
+        $(".total-tricks").text(message.total_tricks);
+        total_tricks = message.total_tricks;
+        let n_tricks = prompt("Decide your number of tricks?");
+        while (n_tricks == null || isNaN(n_tricks)) {
+            n_tricks = prompt("Decide your number of tricks?");
+        }
+        n_tricks = parseInt(n_tricks);
+        if (message.is_dealer) {
+            while ((total_tricks + n_tricks) == number_of_cards) {
+                n_tricks = prompt("Decide your number of tricks?");
+            }
+        }
+        players[client_id].tricks = n_tricks;
+        // replace players text with dynamic function
+        $("#" + players[client_id].place).text(name + " (" + n_tricks + ")");
+        room.send("player_tricks_decided", { "n_tricks": n_tricks });
+    });
+
+    room.onMessage("tricks_decided", (message) => {
+        console.log("received tricks_decided: id " + message.id + ", n_tricks: " + message.n_tricks);
+        players[message.id].tricks = message.n_tricks;
+        $(".total-tricks").text(message.total_tricks);
+        total_tricks = message.total_tricks;
+        // replace players text with dynamic function
+        $("#" + players[message.id].place).text(players[message.id].name + " (" + message.n_tricks + ")");
+    });
 });
