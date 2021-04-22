@@ -275,11 +275,10 @@ export class State extends Schema {
                 this.cls[player[1].id].send("broadcast_winner", { "id": this.players_arr[winner].id, "wins": this.players_arr[winner].wins });
             }
         }
-        this.deck_index = 0;
         this.starting_player = winner;
-        this.total_tricks = 0;
         this.play_count = 0;
         this.can_start_next = 0;
+        this.cards_on_table = [];
     }
 
     get_trump_card() {

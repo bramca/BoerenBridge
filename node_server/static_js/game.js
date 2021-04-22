@@ -15,6 +15,7 @@ var total_tricks = 0;
 var trump_hand = {};
 var my_turn = false;
 var cards_on_table = {};
+
 function render_cards(player_id) {
     let place = players[player_id].place;
     console.log("drawing cards for: " + player_id + ", place: " + place);
@@ -41,6 +42,7 @@ function render_cards(player_id) {
         players[player_id].hand.render();
     }
 }
+
 function getPlayersOnline() {
     let count = 0;
     for (let player_id of Object.keys(players)) {
@@ -50,6 +52,21 @@ function getPlayersOnline() {
     }
     return count;
 }
+
+function set_players_text(player_id) {
+    let player_text = players[player_id].name;
+    if (players[player_id].is_dealer) {
+        player_text += " (D)";
+    }
+    if ('tricks' in players[player_id]) {
+        player_text += " (tr: " + players[player_id].tricks + ")";
+    }
+    if ('wins' in players[player_id]) {
+        player_text += " (win: " + players[player_id].wins + ")";
+    }
+    $("#" + players[player_id].place).text(player_text);
+}
+
 client.joinOrCreate("multi_player").then(room_instance => {
     room = room_instance;
     game_started = false;
@@ -77,6 +94,7 @@ client.joinOrCreate("multi_player").then(room_instance => {
             game_started = true;
         }
     });
+
     room.state.players.onAdd = function (player, sessionId) {
         players[sessionId] = {};
         console.log("player added: " + sessionId + ", place: " + players[sessionId].place + ", name: " + player.name);
@@ -85,10 +103,10 @@ client.joinOrCreate("multi_player").then(room_instance => {
         } else {
             players[sessionId].place = player_dirs[player_dirs_index];
             players[sessionId].name = sessionId;
-            players[sessionId].old_name = sessionId;
+            players[sessionId].tricks = 0;
+            players[sessionId].wins = 0;
             player_dirs_index++;
-            // replace players text with dynamic function
-            $("#" + players[sessionId].place).text(sessionId);
+            set_players_text(sessionId);
             let player_id = sessionId;
             render_cards(player_id);
         }
@@ -99,8 +117,7 @@ client.joinOrCreate("multi_player").then(room_instance => {
 
     room.state.players.onRemove = function (player, sessionId) {
         console.log("player removed: " + sessionId);
-        // replace players text with dynamic function
-        $("#" + players[sessionId].place).text("");
+        set_players_text(sessionId);
         delete players[sessionId];
         player_dirs_index--;
         $(".players").text(getPlayersOnline());
@@ -112,9 +129,7 @@ client.joinOrCreate("multi_player").then(room_instance => {
         players[data_id].place = player_dirs[player_dirs_index];
         player_dirs_index++;
         players[data_id].name = data_name;
-        players[data_id].old_name = data_name;
-        // replace players text with dynamic function
-        $("#" + players[data_id].place).text(data_name);
+        set_players_text(data_id);
     });
 
     room.onMessage("ask_name", (message) => {
@@ -129,28 +144,22 @@ client.joinOrCreate("multi_player").then(room_instance => {
             players[player_key].name = player_names[player_key];
             players[player_key].place = player_dirs[player_dirs.length - (curr_players_length - dirs_index_temp)];
             dirs_index_temp++;
-            // replace players text with dynamic function
-            $("#" + players[player_key].place).text(players[player_key].name);
+            set_players_text(player_key);
         }
-        name = prompt("What is your name?");
+        let name = prompt("What is your name?");
         players[client_id].name = name;
-        players[client_id].old_name = name;
-        // replace players text with dynamic function
-        $("#" + players[client_id].place).text(name);
+        set_players_text(client_id);
         room.send("name", { name: name });
     });
+
     room.onMessage("broadcast_winner", (message) => {
         let id = message.id;
-        let wins = message.wins;
         players[id].wins = message.wins;
         alert(players[id].name + " wins the round!");
-        players[id].name = players[id].name + " (wins: " + players[id].wins + ")";
-        // replace players text with dynamic function
-        $("#" + players[id].place).text(players[id].name);
+        set_players_text(id);
         for (let player_id of Object.keys(players)) {
             if (player_id != id) {
-                // replace players text with dynamic function
-                $("#" + players[player_id].place).text(players[player_id].name);
+                set_players_text(player_id);
             }
         }
         let cards_to_remove = [];
@@ -164,6 +173,7 @@ client.joinOrCreate("multi_player").then(room_instance => {
         $(".total-tricks").text(0);
         room.send("start_next_round", {});
     });
+
     room.onMessage("deck_shuffled", (message) => {
         console.log("message");
         console.log(message);
@@ -179,11 +189,18 @@ client.joinOrCreate("multi_player").then(room_instance => {
             let card_type = card[card.length - 1];
             deck_cards.push(new cards.Card(card_type, card_number, table_name));
         }
+        for (let player_id of Object.keys(players)) {
+            players[player_id].tricks = 0;
+            players[player_id].wins = 0;
+            players[player_id].is_dealer = false;
+            set_players_text(player_id);
+        }
         deck.addCards(deck_cards);
         deck.render({immediate: true});
         console.log("deck");
         console.log(deck);
     });
+
     room.onMessage("draw_cards", (message) => {
         console.log(message);
         players[client_player_id].hand = new cards.Hand({faceUp: true, y: 410, x: 270});
@@ -316,9 +333,8 @@ client.joinOrCreate("multi_player").then(room_instance => {
 
     room.onMessage("dealer", (message) => {
         console.log("received message dealer: " + message);
-        players[message].name = players[message].name + " (D)";
-        // replace players text with dynamic function
-        $("#" + players[message].place).text(players[message].name);
+        players[message].is_dealer = true;
+        set_players_text(message);
     });
 
     room.onMessage("decide_tricks", (message) => {
@@ -338,8 +354,7 @@ client.joinOrCreate("multi_player").then(room_instance => {
             }
         }
         players[client_id].tricks = n_tricks;
-        // replace players text with dynamic function
-        $("#" + players[client_id].place).text(name + " (" + n_tricks + ")");
+        set_players_text(client_id);
         room.send("player_tricks_decided", { "n_tricks": n_tricks });
     });
 
@@ -348,7 +363,6 @@ client.joinOrCreate("multi_player").then(room_instance => {
         players[message.id].tricks = message.n_tricks;
         $(".total-tricks").text(message.total_tricks);
         total_tricks = message.total_tricks;
-        // replace players text with dynamic function
-        $("#" + players[message.id].place).text(players[message.id].name + " (" + message.n_tricks + ")");
+        set_players_text(message.id);
     });
 });
