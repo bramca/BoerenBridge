@@ -276,6 +276,7 @@ export class State extends Schema {
             }
         }
         this.starting_player = winner;
+        // todo check if starting player still has cards to play
         this.play_count = 0;
         this.can_start_next = 0;
         this.cards_on_table = [];
