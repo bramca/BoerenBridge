@@ -366,7 +366,7 @@ export class MultiPlayerRoom extends Room<State> {
             console.log("received start_next_round");
             this.state.can_start_next += 1;
             console.log("received from " + this.state.can_start_next + " clients");
-            if (this.state.can_start_decide == this.maxClients) {
+            if (this.state.can_start_next == this.maxClients) {
                 console.log("next round can start (after winner previous round)");
                 for (let player of this.state.players) {
                     console.log(player[1].toString());
