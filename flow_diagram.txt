@@ -1,0 +1,123 @@
+
+ __Room__                                         __client__
+
+  onJoin (createPlayer)------onAdd--------->    sets player place and name
+                                                based on sessionId
+
+  onJoin               ------ask_name------>    set name and place at table
+
+  set state players    <-----name----------   
+  session id name attr
+
+                       --broadcast_name---->    set other players name
+                                                and place based on
+                                                broadcasted name
+
+ extra players(bots)  <---start_game-------    if start game clicked
+ created to fill
+ table (bot in
+ sessionId)
+ room locked
+ round started
+ cards on server
+ side dealt
+ set starting player
+                      -----deck_shuffled-->   deck filled and rendered
+
+                      -----draw_cards----->   render player cards 
+
+                      -----trump_card----->   set and show trump card
+
+                      -----dealer--------->   set correct player as dealer
+
+                      -----onAdd---------->   when all players ready at table
+                                              start deciding tricks
+
+when received from    <----start_decide_tricks--  
+every player
+send decide tricks    -----decide_tricks------->  prompt player to decide tricks 
+
+set tricks for       <----player_tricks_decided-  
+player at
+server side
+set total tricks
+broadcast tricks     ------tricks_decided------>   set tricks for player
+                                                   update total tricks
+                     -------decide_tricks------>   next player can decide
+                     <-----player_tricks_decided-  
+                     -------tricks_decided----->
+
+                     -------decide_tricks------>
+                     ...
+
+if every player
+decided its tricks
+game can start
+(after bot)
+or (after player)
+set current playing
+player
+                    ----play_card---------------> check which card is clicked by player
+
+set cards on table  <--------card_played--------   
+broadcast card
+played               -----broadcast_card_played-> set card played on table   
+                                                  remove card from player hand
+
+
+set next current
+player to play
+a card              -------play_card------------>  
+                    <--------card_played---------
+                    --------broadcast_card_played-> 
+
+                   -----play_card--------------->
+                   ...
+
+if every player
+played their card
+decide the winner
+(calculate_winner)
+of this subround -----broadcast_winner---------->  display message to show the winner
+                                                   of this subround
+                                                   set wins on the winning player
+                                                   start next sub round
+                 <-----start_next_round----------
+after receiving
+start next round
+from every player
+play next round
+                 -------play_card--------------->
+                 <--------card_played---------
+                 --------broadcast_card_played-> 
+
+                 -----play_card--------------->
+                 ...
+
+if every player
+played their card
+decide the winner
+(calculate_winner)
+of this subround -----broadcast_winner----------> 
+
+                 <-----start_next_round----------
+after receiving
+start next round
+from every player
+play next round
+                 -------play_card--------------->
+                 <--------card_played---------
+                 --------broadcast_card_played-> 
+
+                 -----play_card--------------->
+                 ...
+
+                 ......... this till players
+                 have no more cards to play.....
+
+if every player
+played their card
+decide the winner
+of the total round
+(calculate_winner)
+still TODO
