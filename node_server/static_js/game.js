@@ -170,8 +170,33 @@ client.joinOrCreate("multi_player").then(room_instance => {
         for (let c of cards_to_remove) {
             cards_on_table.removeCard(c);
         }
-        $(".total-tricks").text(0);
         room.send("start_next_round", {});
+    });
+
+    room.onMessage("broadcast_scores", (message) => {
+        console.log(message.scores);
+        let scores = message.scores;
+        let table = $("#score-table")[0];
+        table.innerHTML = '';
+        let cols = ["Name", "Score"];
+        let row = document.createElement("tr");
+        for (let i = 0; i < cols.length; i++) {
+            let cell = document.createElement("td");
+            cell.innerHTML = cols[i];
+            row.appendChild(cell);
+        }
+        table.appendChild(row);
+        // insert data
+        for (let [key, value] of Object.entries(scores)) {
+            row = document.createElement("tr");
+            let cell_name = document.createElement("td");
+            let cell_score = document.createElement("td");
+            cell_name.innerHTML = players[key].name;
+            cell_score.innerHTML = value;
+            row.appendChild(cell_name);
+            row.appendChild(cell_score);
+            table.appendChild(row);
+        }
     });
 
     room.onMessage("deck_shuffled", (message) => {

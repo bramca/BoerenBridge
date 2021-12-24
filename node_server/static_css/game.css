@@ -139,3 +139,14 @@ footer a:hover {
     left: 80%;
     top: 95%;
 }
+#score-table-div {
+    position: absolute;
+}
+
+table, th, td {
+    border: 1px solid black;
+}
+
+table {
+    width: 100%;
+}

@@ -204,7 +204,7 @@ export class State extends Schema {
     deck = [];
     n_rounds = 13;
     curr_round = 0;
-    n_cards = 7;
+    n_cards = 2;
     dealer = 0;
     deck_index = 0;
     total_tricks = 0;
@@ -277,9 +277,31 @@ export class State extends Schema {
         }
         this.starting_player = winner;
         // todo check if starting player still has cards to play
-        this.play_count = 0;
-        this.can_start_next = 0;
-        this.cards_on_table = [];
+        if (this.players_arr[this.starting_player].cards.length == 0) {
+            let scores = {};
+            console.log("calculating round winner")
+            for (var i = 0; i < this.players_arr.length; i++) {
+                let player = this.players_arr[i];
+                if (player.tricks == player.wins) {
+                    player.score += (10 + player.tricks * 2);
+                } else {
+                    player.score -= (Math.abs(player.tricks - player.wins) * 2);
+                }
+                scores[player.id] = player.score;
+            }
+            for (var i = 0; i < this.players_arr.length; i++) {
+                let player = this.players_arr[i];
+                console.log("player info: " + player.toString());
+                if (!player.is_ai) {
+                    this.cls[player.id].send("broadcast_scores", { "scores": scores });
+                }
+            }
+            this.n_cards -= 1;
+        } else {
+            this.play_count = 0;
+            this.can_start_next = 0;
+            this.cards_on_table = [];
+        }
     }
 
     get_trump_card() {
