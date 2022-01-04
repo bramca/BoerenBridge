@@ -257,7 +257,7 @@ client.joinOrCreate("multi_player").then(room_instance => {
         for (let player_id of Object.keys(players)) {
             console.log(players[player_id].hand);
         }
-        // room.send("start_decide_tricks", {});
+        room.send("start_decide_tricks", {});
     });
 
     room.onMessage("broadcast_card_played", (message) => {
