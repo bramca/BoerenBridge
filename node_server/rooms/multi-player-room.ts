@@ -289,6 +289,13 @@ export class State extends Schema {
                 }
                 scores[player.id] = player.score;
             }
+            this.n_cards -= 1;
+            this.can_start_decide = 0;
+            this.decision_count = 0;
+            this.can_start_next = 0;
+            this.play_count = 0;
+            this.dealer = (this.dealer + 1) % this.players_arr.length;
+            this.cards_on_table = [];
             for (var i = 0; i < this.players_arr.length; i++) {
                 let player = this.players_arr[i];
                 console.log("player info: " + player.toString());
@@ -296,7 +303,6 @@ export class State extends Schema {
                     this.cls[player.id].send("broadcast_scores", { "scores": scores });
                 }
             }
-            this.n_cards -= 1;
         } else {
             this.play_count = 0;
             this.can_start_next = 0;
@@ -359,7 +365,13 @@ export class MultiPlayerRoom extends Room<State> {
         this.onMessage("start_game", (client, data) => {
             console.log("MultiPlayerRoom received message from", client.sessionId, ":", data);
             console.log("starting new game");
-            this.maxClients = this.state.players.size;
+            let non_bot_players = 0;
+            for (let player of this.state.players) {
+                if (!player[1].is_ai) {
+                    non_bot_players += 1;
+                }
+            }
+            this.maxClients = non_bot_players;
             while (this.state.players.size < 4) {
                 this.state.createPlayer(true, "bot" + (this.state.players.size + 1).toString());
                 this.state.players["bot" + this.state.players.size].name += this.state.players.size + 1;
@@ -369,6 +381,7 @@ export class MultiPlayerRoom extends Room<State> {
             console.log("max spelers: " + this.maxClients);
             this.state.start_round();
             // round started
+            // todo other draw rules for 1 card hand
             console.log("round started");
             this.broadcast("deck_shuffled", this.state.deck);
             for (let player of this.state.players) {
@@ -409,6 +422,7 @@ export class MultiPlayerRoom extends Room<State> {
             console.log("received start_decide_tricks");
             this.state.can_start_decide += 1;
             console.log("received from " + this.state.can_start_decide + " clients");
+            console.log("this.maxClients: " + this.maxClients);
             if (this.state.can_start_decide == this.maxClients) {
                 this.state.curr_player_index = (this.state.starting_player + this.state.decision_count) % this.state.players_arr.length;
                 let curr_player = this.state.players_arr[this.state.curr_player_index];

@@ -16,30 +16,30 @@ var trump_hand = {};
 var my_turn = false;
 var cards_on_table = {};
 
-function render_cards(player_id) {
+function render_cards(player_id, face_up) {
     let place = players[player_id].place;
-    console.log("drawing cards for: " + player_id + ", place: " + place);
+    console.log("drawing cards for: " + player_id + ", place: " + place + ", face_up: " + face_up);
     if (place == player_dirs[1]) {
-        players[player_id].hand = new cards.Hand({faceUp: false, y: 280, x: -10});
+        players[player_id].hand = new cards.Hand({faceUp: face_up, y: 280, x: -10});
         for (let i = 0; i < number_of_cards; i++) {
-            let card_to_add = new cards.Card('c', i, table_name);
+            let card_to_add = new cards.Card('c', i + 1, table_name);
             players[player_id].hand.addCard(card_to_add);
         }
-        players[player_id].hand.render();
+        players[player_id].hand.render({immediate: true});
     } else if (place == player_dirs[2]) {
-        players[player_id].hand = new cards.Hand({faceUp: false, y: 50, x: 270});
+        players[player_id].hand = new cards.Hand({faceUp: face_up, y: 50, x: 270});
         for (let i = 0; i < number_of_cards; i++) {
-            let card_to_add = new cards.Card('c', i, table_name);
+            let card_to_add = new cards.Card('c', i + 1, table_name);
             players[player_id].hand.addCard(card_to_add);
         }
-        players[player_id].hand.render();
+        players[player_id].hand.render({immediate: true});
     } else if (place == player_dirs[3]) {
-        players[player_id].hand = new cards.Hand({faceUp: false, y: 280, x: 550});
+        players[player_id].hand = new cards.Hand({faceUp: face_up, y: 280, x: 550});
         for (let i = 0; i < number_of_cards; i++) {
-            let card_to_add = new cards.Card('c', i, table_name);
+            let card_to_add = new cards.Card('c', i + 1, table_name, face_up);
             players[player_id].hand.addCard(card_to_add);
         }
-        players[player_id].hand.render();
+        players[player_id].hand.render({immediate: true});
     }
 }
 
@@ -108,10 +108,7 @@ client.joinOrCreate("multi_player").then(room_instance => {
             player_dirs_index++;
             set_players_text(sessionId);
             let player_id = sessionId;
-            render_cards(player_id);
-        }
-        if (Object.keys(players).length == max_number_players) {
-            room.send("start_decide_tricks", {});
+            render_cards(player_id, false);
         }
     }
 
@@ -197,6 +194,7 @@ client.joinOrCreate("multi_player").then(room_instance => {
             row.appendChild(cell_score);
             table.appendChild(row);
         }
+        room.send("start_game", {});
     });
 
     room.onMessage("deck_shuffled", (message) => {
@@ -228,8 +226,15 @@ client.joinOrCreate("multi_player").then(room_instance => {
 
     room.onMessage("draw_cards", (message) => {
         console.log(message);
-        players[client_player_id].hand = new cards.Hand({faceUp: true, y: 410, x: 270});
         number_of_cards = message.length;
+        client_face_up = true;
+        other_face_up = false;
+        // todo other draw rules for 1 card
+        if (number_of_cards == 1) {
+            client_face_up = false;
+            other_face_up = true;
+        }
+        players[client_player_id].hand = new cards.Hand({faceUp: client_face_up, y: 410, x: 270});
         for (let card of message) {
             let card_number = card.substring(0, card.length - 1);
             let card_type = card[card.length - 1];
@@ -244,10 +249,15 @@ client.joinOrCreate("multi_player").then(room_instance => {
             players[client_player_id].hand.render({});
         }
         for (let player_id of Object.keys(players)) {
-            if (players[player_id].place) {
-                render_cards(player_id);
+            if (players[player_id].place && player_id != client_player_id) {
+                render_cards(player_id, other_face_up);
             }
         }
+        console.log("players (after draw): ");
+        for (let player_id of Object.keys(players)) {
+            console.log(players[player_id].hand);
+        }
+        // room.send("start_decide_tricks", {});
     });
 
     room.onMessage("broadcast_card_played", (message) => {

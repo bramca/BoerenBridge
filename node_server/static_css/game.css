@@ -1,5 +1,5 @@
-html { 
-	background-color:#092E20; 
+html {
+	background-color:#092E20;
 }
 body {
     font-family: "Courier New", sans-serif;
@@ -38,26 +38,26 @@ body {
     color: green;
 }
 
-body { 
+body {
 	position:relative;
-	border-radius:8px; 
-	box-shadow:black 0px 0px 2px; 
-	width: 600px; 
-	background:#FFF; 
-	margin:20px auto; 
-	border:solid 1px black; 
-	font-family: arial, sans-serif; 
-	padding:50px;  
+	border-radius:8px;
+	box-shadow:black 0px 0px 2px;
+	width: 600px;
+	background:#FFF;
+	margin:20px auto;
+	border:solid 1px black;
+	font-family: arial, sans-serif;
+	padding:50px;
 }
 #buttons {
 	text-align:center;
 }
 
 a img {
-	position: absolute; 
-	top: 0; 
-	right: 0; 
-	border: 0;			
+	position: absolute;
+	top: 0;
+	right: 0;
+	border: 0;
 }
 button {
 	height:30px;
@@ -145,8 +145,5 @@ footer a:hover {
 
 table, th, td {
     border: 1px solid black;
-}
-
-table {
-    width: 100%;
+    background: white;
 }
