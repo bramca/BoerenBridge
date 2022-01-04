@@ -16,27 +16,27 @@ var trump_hand = {};
 var my_turn = false;
 var cards_on_table = {};
 
-function render_cards(player_id, face_up) {
+function render_cards(player_id, face_up, type, number) {
     let place = players[player_id].place;
     console.log("drawing cards for: " + player_id + ", place: " + place + ", face_up: " + face_up);
     if (place == player_dirs[1]) {
         players[player_id].hand = new cards.Hand({faceUp: face_up, y: 280, x: -10});
         for (let i = 0; i < number_of_cards; i++) {
-            let card_to_add = new cards.Card('c', i + 1, table_name);
+            let card_to_add = new cards.Card(type, number, table_name);
             players[player_id].hand.addCard(card_to_add);
         }
         players[player_id].hand.render({immediate: true});
     } else if (place == player_dirs[2]) {
         players[player_id].hand = new cards.Hand({faceUp: face_up, y: 50, x: 270});
         for (let i = 0; i < number_of_cards; i++) {
-            let card_to_add = new cards.Card('c', i + 1, table_name);
+            let card_to_add = new cards.Card(type, number, table_name);
             players[player_id].hand.addCard(card_to_add);
         }
         players[player_id].hand.render({immediate: true});
     } else if (place == player_dirs[3]) {
         players[player_id].hand = new cards.Hand({faceUp: face_up, y: 280, x: 550});
         for (let i = 0; i < number_of_cards; i++) {
-            let card_to_add = new cards.Card('c', i + 1, table_name, face_up);
+            let card_to_add = new cards.Card(type, number, table_name, face_up);
             players[player_id].hand.addCard(card_to_add);
         }
         players[player_id].hand.render({immediate: true});
@@ -108,7 +108,7 @@ client.joinOrCreate("multi_player").then(room_instance => {
             player_dirs_index++;
             set_players_text(sessionId);
             let player_id = sessionId;
-            render_cards(player_id, false);
+            render_cards(player_id, false, 'c', 1);
         }
     }
 
@@ -123,8 +123,10 @@ client.joinOrCreate("multi_player").then(room_instance => {
     room.onMessage("broadcast_name", (message) => {
         let data_id = message.id;
         let data_name = message.name;
-        players[data_id].place = player_dirs[player_dirs_index];
-        player_dirs_index++;
+        if (!players[data_id].place) {
+            players[data_id].place = player_dirs[player_dirs_index];
+            player_dirs_index++;
+        }
         players[data_id].name = data_name;
         set_players_text(data_id);
     });
@@ -133,6 +135,7 @@ client.joinOrCreate("multi_player").then(room_instance => {
         let client_id = message.id;
         client_player_id = message.id;
         let player_names = message.player_names;
+        console.log(player_names);
         let curr_players_length = Object.keys(player_names).length;
         players[client_id].place = player_dirs[player_dirs_index];
         player_dirs_index++;
@@ -167,7 +170,9 @@ client.joinOrCreate("multi_player").then(room_instance => {
         for (let c of cards_to_remove) {
             cards_on_table.removeCard(c);
         }
-        room.send("start_next_round", {});
+        if (message.next_round) {
+            room.send("start_next_round", {});
+        }
     });
 
     room.onMessage("broadcast_scores", (message) => {
@@ -194,7 +199,7 @@ client.joinOrCreate("multi_player").then(room_instance => {
             row.appendChild(cell_score);
             table.appendChild(row);
         }
-        room.send("start_game", {});
+        room.send("start_new_game", {});
     });
 
     room.onMessage("deck_shuffled", (message) => {
@@ -224,17 +229,35 @@ client.joinOrCreate("multi_player").then(room_instance => {
         console.log(deck);
     });
 
+    room.onMessage("draw_one_card", (message) => {
+        console.log(message);
+        number_of_cards = 1;
+        for (let player_key of Object.keys(message)) {
+            if (player_key != client_player_id) {
+                let card = message[player_key][0];
+                let card_number = card.substring(0, card.length - 1);
+                let card_type = card[card.length - 1];
+                if (card_number == "K") {
+                    card_number = 13;
+                } else if (card_number == "D") {
+                    card_number = 12;
+                } else if (card_number == "J") {
+                    card_number = 11;
+                }
+                render_cards(player_key, true, card_type, card_number);
+            } else {
+                players[client_player_id].hand = new cards.Hand({faceUp: false, y: 410, x: 270});
+                players[client_player_id].hand.addCard(new cards.Card('c', 1, table_name));
+                players[client_player_id].hand.render({});
+            }
+        }
+        room.send("start_decide_tricks", {});
+    });
+
     room.onMessage("draw_cards", (message) => {
         console.log(message);
         number_of_cards = message.length;
-        client_face_up = true;
-        other_face_up = false;
-        // todo other draw rules for 1 card
-        if (number_of_cards == 1) {
-            client_face_up = false;
-            other_face_up = true;
-        }
-        players[client_player_id].hand = new cards.Hand({faceUp: client_face_up, y: 410, x: 270});
+        players[client_player_id].hand = new cards.Hand({faceUp: true, y: 410, x: 270});
         for (let card of message) {
             let card_number = card.substring(0, card.length - 1);
             let card_type = card[card.length - 1];
@@ -250,7 +273,7 @@ client.joinOrCreate("multi_player").then(room_instance => {
         }
         for (let player_id of Object.keys(players)) {
             if (players[player_id].place && player_id != client_player_id) {
-                render_cards(player_id, other_face_up);
+                render_cards(player_id, false, 'c', 1);
             }
         }
         console.log("players (after draw): ");

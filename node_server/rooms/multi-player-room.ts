@@ -2,7 +2,7 @@ import { Room, Client } from "colyseus";
 import { Schema, type, MapSchema } from "@colyseus/schema";
 
 export class Player extends Schema {
-    name = "Bot";
+    name = "undefined";
     cards = [];
     wins = 0;
     tricks = 0;
@@ -205,6 +205,7 @@ export class State extends Schema {
     n_rounds = 13;
     curr_round = 0;
     n_cards = 2;
+    count_dir = -1;
     dealer = 0;
     deck_index = 0;
     total_tricks = 0;
@@ -213,6 +214,7 @@ export class State extends Schema {
     decision_count = 0;
     can_start_decide = 0;
     can_start_next = 0;
+    can_start_new_game = 0;
     play_count = 0;
     cards_on_table = [];
     sleep = (milliseconds) => {
@@ -246,6 +248,7 @@ export class State extends Schema {
     }
 
     async calculate_winner(room) {
+        // todo end game when 7 cards is reached again
         let t_cards = this.cards;
         let suits = this.suits;
         let card_points = {};
@@ -268,15 +271,18 @@ export class State extends Schema {
             }
         }
         this.players_arr[winner].wins += 1;
+        let next_round = true;
+        if (this.players_arr[this.starting_player].cards.length == 0) {
+            next_round = false;
+        }
         console.log("winner is " + this.players_arr[winner].toString());
         await this.sleep(2000);
         for (let player of this.players) {
             if (!player[1].is_ai) {
-                this.cls[player[1].id].send("broadcast_winner", { "id": this.players_arr[winner].id, "wins": this.players_arr[winner].wins });
+                this.cls[player[1].id].send("broadcast_winner", { "id": this.players_arr[winner].id, "wins": this.players_arr[winner].wins, "next_round": next_round });
             }
         }
         this.starting_player = winner;
-        // todo check if starting player still has cards to play
         if (this.players_arr[this.starting_player].cards.length == 0) {
             let scores = {};
             console.log("calculating round winner")
@@ -289,11 +295,17 @@ export class State extends Schema {
                 }
                 scores[player.id] = player.score;
             }
-            this.n_cards -= 1;
+            console.log("this.count_dir: " + this.count_dir);
+            if (this.n_cards == 1) {
+                this.count_dir = this.count_dir * -1;
+            }
+            console.log("this.count_dir: " + this.count_dir);
+            this.n_cards = this.n_cards + this.count_dir;
             this.can_start_decide = 0;
             this.decision_count = 0;
             this.can_start_next = 0;
             this.play_count = 0;
+            this.can_start_new_game = 0;
             this.dealer = (this.dealer + 1) % this.players_arr.length;
             this.cards_on_table = [];
             for (var i = 0; i < this.players_arr.length; i++) {
@@ -381,7 +393,6 @@ export class MultiPlayerRoom extends Room<State> {
             console.log("max spelers: " + this.maxClients);
             this.state.start_round();
             // round started
-            // todo other draw rules for 1 card hand
             console.log("round started");
             this.broadcast("deck_shuffled", this.state.deck);
             for (let player of this.state.players) {
@@ -395,6 +406,43 @@ export class MultiPlayerRoom extends Room<State> {
             this.broadcast("trump_card", this.state.get_trump_card());
             this.broadcast("dealer", this.state.players_arr[this.state.dealer].id)
             this.state.starting_player = (this.state.dealer + 1) % this.state.players_arr.length;
+        });
+
+        this.onMessage("start_new_game", (client, data) => {
+            console.log("starting new game");
+            this.state.can_start_new_game += 1;
+            if (this.state.can_start_new_game == this.maxClients) {
+            // lock the room when the game starts
+                this.lock();
+                console.log("max spelers: " + this.maxClients);
+                this.state.start_round();
+                // round started
+                console.log("round started");
+                this.broadcast("deck_shuffled", this.state.deck);
+                if (this.state.n_cards == 1) {
+                    let other_player_cards = {};
+                    for (let player of this.state.players) {
+                        other_player_cards[player[1].id] = player[1].cards;
+                    }
+                    for (let player of this.state.players) {
+                        if (!player[1].is_ai) {
+                            this.state.cls[player[1].id].send("draw_one_card", other_player_cards);
+                        }
+                    }
+                } else {
+                    for (let player of this.state.players) {
+                        console.log(player[1].toString());
+                        if (!player[1].is_ai) {
+                            console.log("sending draw cards message to " + player[1].toString() + " with id: " + player[1].id);
+                            this.state.cls[player[1].id].send("draw_cards", player[1].cards);
+                        }
+                    }
+                }
+                console.log("trump card: " + this.state.get_trump_card());
+                this.broadcast("trump_card", this.state.get_trump_card());
+                this.broadcast("dealer", this.state.players_arr[this.state.dealer].id)
+                this.state.starting_player = (this.state.dealer + 1) % this.state.players_arr.length;
+            }
         });
 
         this.onMessage("start_next_round", async (client, data) => {
