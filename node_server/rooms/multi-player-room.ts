@@ -204,7 +204,7 @@ export class State extends Schema {
     deck = [];
     n_rounds = 13;
     curr_round = 0;
-    n_cards = 2;
+    n_cards = 7;
     count_dir = -1;
     dealer = 0;
     deck_index = 0;
@@ -415,11 +415,11 @@ export class MultiPlayerRoom extends Room<State> {
 
         this.onMessage("start_new_game", (client, data) => {
             console.log("starting new game");
-            if (this.state.count_dir > 0 && this.state.n_cards == 3) {
+            if (this.state.count_dir > 0 && this.state.n_cards == 8) {
                 this.state.can_start_new_game += 1;
                 if (this.state.can_start_new_game == this.maxClients) {
                     this.state.count_dir = -1;
-                    this.state.n_cards = 2;
+                    this.state.n_cards = 7;
                     for (let player of this.state.players) {
                         player[1].score = 0;
                     }
