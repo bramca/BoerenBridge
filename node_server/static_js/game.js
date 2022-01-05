@@ -89,6 +89,8 @@ client.joinOrCreate("multi_player").then(room_instance => {
     $("#start_button").click(function () {
         console.log("start game pressed");
         $(".buttons").hide();
+        let table = $("#score-table")[0];
+        table.innerHTML = '';
         if (!game_started) {
             room.send("start_game", {});
             game_started = true;
@@ -233,25 +235,30 @@ client.joinOrCreate("multi_player").then(room_instance => {
         console.log(message);
         number_of_cards = 1;
         for (let player_key of Object.keys(message)) {
+            let card = message[player_key][0];
+            let card_number = card.substring(0, card.length - 1);
+            let card_type = card[card.length - 1];
+            if (card_number == "K") {
+                card_number = 13;
+            } else if (card_number == "D") {
+                card_number = 12;
+            } else if (card_number == "J") {
+                card_number = 11;
+            }
             if (player_key != client_player_id) {
-                let card = message[player_key][0];
-                let card_number = card.substring(0, card.length - 1);
-                let card_type = card[card.length - 1];
-                if (card_number == "K") {
-                    card_number = 13;
-                } else if (card_number == "D") {
-                    card_number = 12;
-                } else if (card_number == "J") {
-                    card_number = 11;
-                }
                 render_cards(player_key, true, card_type, card_number);
             } else {
                 players[client_player_id].hand = new cards.Hand({faceUp: false, y: 410, x: 270});
-                players[client_player_id].hand.addCard(new cards.Card('c', 1, table_name));
+                players[client_player_id].hand.addCard(new cards.Card(card_type, card_number, table_name));
                 players[client_player_id].hand.render({});
             }
         }
         room.send("start_decide_tricks", {});
+    });
+
+    room.onMessage("end_game", (message) => {
+        $(".buttons").show();
+        game_started = false;
     });
 
     room.onMessage("draw_cards", (message) => {
@@ -402,7 +409,7 @@ client.joinOrCreate("multi_player").then(room_instance => {
         $(".total-tricks").text(message.total_tricks);
         total_tricks = message.total_tricks;
         let n_tricks = prompt("Decide your number of tricks?");
-        while (n_tricks == null || isNaN(n_tricks)) {
+        while (n_tricks == null || isNaN(n_tricks) || n_tricks == '') {
             n_tricks = prompt("Decide your number of tricks?");
         }
         n_tricks = parseInt(n_tricks);
