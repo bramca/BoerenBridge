@@ -329,9 +329,11 @@ client.joinOrCreate("multi_player").then(room_instance => {
                 card_number = "J";
             }
             let has_suit = false;
-            for (let c of players[message.id].hand) {
-                if (c.suit == cards_on_table[0].suit) {
-                    has_suit = true;
+            if (cards_on_table.length > 0) {
+                for (let c of players[message.id].hand) {
+                    if (c.suit == cards_on_table[0].suit) {
+                        has_suit = true;
+                    }
                 }
             }
             if (card.container == players[message.id].hand && my_turn) {
@@ -341,7 +343,7 @@ client.joinOrCreate("multi_player").then(room_instance => {
                 console.log(cards_on_table[0]);
                 console.log("trump card");
                 console.log(trumphand.topCard());
-                if (cards_on_table.length == 0 || !has_suit) {
+                if (!has_suit) {
                     cards_on_table.addCard(card);
                     cards_on_table.render({});
                     my_turn = false;
