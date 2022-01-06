@@ -320,6 +320,20 @@ client.joinOrCreate("multi_player").then(room_instance => {
         my_turn = true;
         $(".card").click(function(ev) {
             let card = $(this).data('card');
+            let card_number = card.rank;
+            if (card_number == 13) {
+                card_number = "K";
+            } else if (card_number == 12) {
+                card_number = "D";
+            } else if (card_number == 11) {
+                card_number = "J";
+            }
+            let has_suit = false;
+            for (let c of players[message.id].hand) {
+                if (c.suit == cards_on_table[0].suit) {
+                    has_suit = true;
+                }
+            }
             if (card.container == players[message.id].hand && my_turn) {
                 console.log("card clicked");
                 console.log(card);
@@ -327,53 +341,16 @@ client.joinOrCreate("multi_player").then(room_instance => {
                 console.log(cards_on_table[0]);
                 console.log("trump card");
                 console.log(trumphand.topCard());
-                if (cards_on_table.length == 0) {
+                if (cards_on_table.length == 0 || !has_suit) {
                     cards_on_table.addCard(card);
                     cards_on_table.render({});
                     my_turn = false;
-                    let card_number = card.rank;
-                    if (card_number == 13) {
-                        card_number = "K";
-                    } else if (card_number == 12) {
-                        card_number = "D";
-                    } else if (card_number == 11) {
-                        card_number = "J";
-                    }
                     room.send("card_played", { 'card': (card_number + card.suit) });
-                } else if (card.suit == cards_on_table[0].suit || card.suit == trumphand.topCard().suit) {
+                } else if (card.suit == cards_on_table[0].suit) {
                     cards_on_table.addCard(card);
                     cards_on_table.render({});
                     my_turn = false;
-                    let card_number = card.rank;
-                    if (card_number == 13) {
-                        card_number = "K";
-                    } else if (card_number == 12) {
-                        card_number = "D";
-                    } else if (card_number == 11) {
-                        card_number = "J";
-                    }
                     room.send("card_played", { 'card': (card_number + card.suit) });
-                } else {
-                    let has_suit = false;
-                    for (let c of players[message.id].hand) {
-                        if (c.suit == cards_on_table[0].suit) {
-                            has_suit = true;
-                        }
-                    }
-                    if (!has_suit) {
-                        cards_on_table.addCard(card);
-                        cards_on_table.render({});
-                        my_turn = false;
-                        let card_number = card.rank;
-                        if (card_number == 13) {
-                            card_number = "K";
-                        } else if (card_number == 12) {
-                            card_number = "D";
-                        } else if (card_number == 11) {
-                            card_number = "J";
-                        }
-                        room.send("card_played", { 'card': (card_number + card.suit) });
-                    }
                 }
             }
         });
