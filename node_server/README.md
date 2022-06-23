@@ -1,3 +1,6 @@
+# Multiplayer Server
+This server is based upon the source code of Colyseus
+
 <div align="center">
   <a href="https://github.com/colyseus/colyseus">
     <img src="https://github.com/colyseus/colyseus/blob/master/media/header.png?raw=true" />

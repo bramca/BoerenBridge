@@ -46,8 +46,10 @@ The player with the highest score wins.
     npm
     
 # How to run
-## Single player python game
+## Single player cli game
     run the command `python game.py [-g|--games] [number_of_games]`
+    This will create a CLI based card game.
+    ![game cli](./img/game_cli.PNG)
     
 ## Multi player server
     run the command `npm start`
