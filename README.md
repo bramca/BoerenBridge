@@ -35,7 +35,7 @@ The player with the highest score wins.
 
 
 # Requirements
-## Single player python game
+## Single player cli game
     Python 3.x
     pip modules:
         - colorama
@@ -51,3 +51,10 @@ run the command `python game.py [-g|--games] [number_of_games]`, this will creat
     
 ## Multi player server
 run the command `npm start`, a server will be started on `http://localhost:2567`
+
+# Analysis
+The repo also contains an [analyse.r](./analyse.r) R script that analyses the algorithm behind the AI used in the game.
+It outputs a graph [Rplots.pdf](./Rplots.pdf) that shows the ranking of the AI per game (1 being the winner and 6 being the loser) per risk taking factor (a factor between 0.5 and 0.75, it calculates the odds of winning for every card and if it is higher then the risk factor of the AI it will add it to it's playable cards).
+This analysis is there to see what the best risk_taking factors are for the AI.
+The source code will take a random risk factor for every AI but if you want to make the game harder you can have it as a predefined value based on the analysis.
+The analysis is done on an input csv file. The analysis in this repo has been done on [data_bak.csv](./data_bak.csv), where 6 bots played for a 100 games. You can do your own analysis by running the single player cli game with 6 AI bots that play against each other with random risk taking factors and let them play for some games. Then run the [analse.r](./analyse.r) script on [data.csv](./data.csv) with the command `rscript .\analyse.r .\data.csv`.
