@@ -1,6 +1,6 @@
 # Chinees Poepen
 A famous belgian card game.<br>
-(Don't mind the terrible UI :dissapointed_relieved:, I was mainly focused on the game logic in this project)
+(Don't mind the terrible UI, I was mainly focused on the game logic in this project)
 
 # Rules
 At the start of the game every player receives 7 cards.
