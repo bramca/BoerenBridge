@@ -276,8 +276,16 @@ client.joinOrCreate("multi_player").then(room_instance => {
                 card_number = 11;
             }
             players[client_player_id].hand.addCard(new cards.Card(card_type, card_number, table_name));
-            players[client_player_id].hand.render({});
         }
+        players[client_player_id].hand.sort((a, b) => {
+            if (a.suit < b.suit) return -1;
+            if (a.suit > b.suit) return 1;
+            let a_rank = parseInt(a.rank) == 1 ? 14 : parseInt(a.rank);
+            let b_rank = parseInt(b.rank) == 1 ? 14 : parseInt(b.rank);
+            if (a_rank < b_rank) return -1;
+            return 1
+        })
+        players[client_player_id].hand.render({});
         for (let player_id of Object.keys(players)) {
             if (players[player_id].place && player_id != client_player_id) {
                 render_cards(player_id, false, 'c', 1);
