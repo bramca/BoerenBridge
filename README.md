@@ -1,4 +1,4 @@
-# Chinees Poepen
+# Boeren Bridge
 A famous belgian card game.<br>
 (Don't mind the terrible UI, I was mainly focused on the game logic in this project)
 
